@@ -6,10 +6,10 @@
     Potentiometer (for speed control)
 */
 
-int motor1A = GPIO_NUM_13;
-int motor2A = GPIO_NUM_14;
-int enableA = GPIO_NUM_27;
-int potpin = GPIO_NUM_33;
+const int motor1A = GPIO_NUM_13;
+const int motor2A = GPIO_NUM_14;
+const int enableA = GPIO_NUM_27;
+const int potpin = GPIO_NUM_33;
 
 // PWM settings
 const int freq = 20000; // PWM frequency: 20 kHz (Adjust 2-20 kHz as needed)

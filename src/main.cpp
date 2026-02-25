@@ -1,5 +1,9 @@
 #include <Arduino.h>
 
+/*
+    This should be a clone of main.cpp, may be outdated if I forget to update it
+*/
+
 const int motor1A = GPIO_NUM_13;
 const int motor2A = GPIO_NUM_14;
 const int enableA = GPIO_NUM_27;

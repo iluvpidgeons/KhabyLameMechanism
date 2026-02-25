@@ -1,8 +1,13 @@
 # khaby lame meme died a few months ago anyways but im already commited and its still funny
 
-the goal of this project is to include as many random components as possible to look like that one image
-![](images/Screenshot%20from%202026-02-24%2013-47-32.png)
+I plan to add the following components
+* Motor with `L293D Integrated Circut`
+* LEDs
+* Potentiometer
+* Light I took from a fire alarm
+* Microphone
+* ~~Button~~ It would be cool to include but I don't know what I would include it in
 
----
-placeholder gif
-![BURGER](images/placeholder.gif)
+All pins should be consistent across different scripts
+
+![](images/IMG_2666-ezgif.com-video-to-gif-converter.gif)
