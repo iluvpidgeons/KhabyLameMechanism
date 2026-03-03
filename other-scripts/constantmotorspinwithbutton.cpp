@@ -1,13 +1,13 @@
 #include <Arduino.h>
 
 /*
-    I dont understand a lot of this code bro
-    Not fixed yet but the plan is for the button to swap the direction
+  I dont understand a lot of this code bro
+  Not fixed yet but the plan is for the button to swap the direction
 
-    Components:
-    Motor with Motor Driver (L298N)
-    Potentiometer (for speed control)
-    Button (for direction control)
+  Components:
+  Motor with Motor Driver (L298N)
+  Potentiometer (for speed control)
+  Button (for direction control)
 */
 
 // pins

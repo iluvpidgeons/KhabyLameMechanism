@@ -1,9 +1,9 @@
 #include <Arduino.h>
 
 /*
-    Components:
-    Motor with Motor Driver (L298N)
-    Potentiometer (for speed control)
+  Components:
+  Motor with Motor Driver (L298N)
+  Potentiometer (for speed control)
 */
 
 const int motor1A = GPIO_NUM_13;

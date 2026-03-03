@@ -5,7 +5,7 @@ I plan to add the following components
 * LEDs
 * Potentiometer
 * Light I took from a fire alarm
-* Microphone
+* `MAX4466` Microphone
 * ~~Button~~ It would be cool to include but I don't know what I would include it in
 
 All pins should be consistent across different scripts
