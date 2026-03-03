@@ -7,7 +7,7 @@
 const int motor1A = GPIO_NUM_13;
 const int motor2A = GPIO_NUM_14;
 const int enableA = GPIO_NUM_27;
-const int potpin = GPIO_NUM_33;
+const int potpin = GPIO_NUM_36;
 const int ledPin1 = GPIO_NUM_16;
 const int ledPin2 = GPIO_NUM_17;
 const int ledPin3 = GPIO_NUM_18;

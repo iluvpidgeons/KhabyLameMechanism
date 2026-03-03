@@ -2,7 +2,7 @@
 
 /*
     I dont understand a lot of this code bro
-    I also don't know if this works im not checking before I push to github
+    Not fixed yet but the plan is for the button to swap the direction
 
     Components:
     Motor with Motor Driver (L298N)
@@ -14,7 +14,7 @@
 const int motor1A = GPIO_NUM_13;
 const int motor2A = GPIO_NUM_14;
 const int enableA = GPIO_NUM_27;
-const int potpin = GPIO_NUM_33;
+const int potpin = GPIO_NUM_36;
 const int buttonpin = GPIO_NUM_23;
 
 // PWM settings
