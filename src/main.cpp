@@ -1,40 +1,148 @@
 #include <Arduino.h>
+#include "ESP_Music.h"
+#include "Melody.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-// pins & leds
+bool DEBUG = true;
+// Sample window width in ms (50ms = 20Hz) for measuring sound amplitude. Adjust this based on how responsive you want the LEDs to be.
+// Shorter windows will be more responsive but may be more affected by noise, while longer windows will be smoother but less responsive.
+const int sampleWindow = 50;
+const int threshold = 3000; // Amplitude threshold to consider as "loud". Adjust this based on your microphone's sensitivity and environment noise level.
+const unsigned long interval = 1000; // How long you need to scream to light up the next led (in ms)
+const int cylonInterval = 200; // Interval for the Cylon LED pattern in ms
+
+// pins
 const int ledPins[] = {GPIO_NUM_16, GPIO_NUM_17, GPIO_NUM_18};
-const int numLeds = 3;
-int currentLed = 0;
+const int numLeds = sizeof(ledPins) / sizeof(ledPins[0]);
 const int micPin = GPIO_NUM_39;
-// const int buzzerPin = 19;
+const int buzzerPin = GPIO_NUM_14;
 
-// frequency & resolution
-const int freq = 20000;
+// ADC resolution
 const int resolution = 12;
 
-// microphone
-const int sampleWindow = 50; // sample window in ms
-unsigned int sample;
-const int threshold = 3000; // placeholder value
-
 // timer variables
-const int interval = 1000; // interval 4 how long u need to scream
-unsigned long previousMillis = 0;
+unsigned long stepMillis = 0;
+int litCount = 0; // number of LEDs currently ON (0..numLeds)
+bool wasLoud = false;
+bool khabyTriggered = false;
+volatile bool playMusic = false;
 
+MusicPlayer player(buzzerPin, bpm);
 
-void lightLED() {
-    // Get the current time
-    unsigned long currentMillis = millis();
-
-    if (currentLed >= numLeds) {
-        currentLed = 0;
-    }
-  
-    if (currentMillis - previousMillis >= interval) {
-        digitalWrite(ledPins[currentLed], HIGH); // Turn on the current LED
-        currentLed++; // Move to the next LED for the next interval
-        previousMillis = currentMillis;
+void musicTask(void *pvParameters) {
+    for(;;) { // Tasks must loop forever
+        if (playMusic) {
+            player.play(melody, melodyLength);
+            playMusic = false; // Stop after playing once, or create a counter to repeat as needed
+        }
+        // Small delay to prevent the watchdog timer from barking
+        vTaskDelay(pdMS_TO_TICKS(100)); 
     }
 }
+
+void runCylonScanner() {
+  // Static variables remember their state between loop iterations
+  static unsigned long lastUpdate = 0;
+  static int currentLed = 0;
+  static int direction = 1;
+
+  // Non-blocking timer check
+  if (millis() - lastUpdate >= cylonInterval) {
+    lastUpdate = millis();
+
+    // 1. Turn off all LEDs
+    for (int i = 0; i < numLeds; i++) {
+      digitalWrite(ledPins[i], LOW);
+    }
+
+    // 2. Turn on the active LED
+    digitalWrite(ledPins[currentLed], HIGH);
+
+    // 3. Logic to bounce back and forth
+    currentLed += direction;
+    if (currentLed >= numLeds - 1 || currentLed <= 0) {
+      direction *= -1; // Reverse direction
+    }
+  }
+}
+
+
+void initiateKhaby() {
+    playMusic = true;
+
+    while (playMusic) {
+        // TODO: add your mechanism trigger here
+        runCylonScanner();
+        // Yield to let other tasks (like musicTask) run.
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+
+    // Reset LEDs/state after the sequence so the main state machine isn't out-of-sync
+    // with whatever the scanner left on.
+    for (int i = 0; i < numLeds; i++) {
+        digitalWrite(ledPins[i], LOW);
+    }
+    litCount = 0;
+}
+
+
+unsigned int readMicAmplitude() {
+    const unsigned long startMillis = millis();
+
+    unsigned int signalMax = 0;
+    unsigned int signalMin = 4095;
+
+    while (millis() - startMillis < sampleWindow) {
+        const unsigned int sample = analogRead(micPin);
+
+        if (sample < 4095) {
+            if (sample > signalMax) {
+                signalMax = sample;
+            } else if (sample < signalMin) {
+                signalMin = sample;
+            }
+        }
+    }
+
+    // max - min = peak-peak amplitude (guard against unsigned underflow)
+    if (signalMax >= signalMin) {
+        return signalMax - signalMin;
+    }
+    return 0;
+}
+
+void updateLedState(const bool loud, const unsigned long now) {
+    if (loud != wasLoud) {
+        stepMillis = now;
+        wasLoud = loud;
+    }
+
+    if (loud) {
+        if (litCount < numLeds) {
+            khabyTriggered = false;
+            if (now - stepMillis >= interval) {
+                digitalWrite(ledPins[litCount], HIGH);
+                litCount++;
+                stepMillis = now;
+            }
+        } else {
+            if (!khabyTriggered && (now - stepMillis >= interval)) {
+                initiateKhaby();
+                khabyTriggered = true;
+                stepMillis = now;
+            }
+        }
+    } else {
+        khabyTriggered = false;
+        if (litCount > 0 && (now - stepMillis >= interval)) {
+            litCount--;
+            digitalWrite(ledPins[litCount], LOW);
+            stepMillis = now;
+        }
+    }
+}
+
 
 void setup() {
     Serial.begin(115200);
@@ -44,30 +152,27 @@ void setup() {
         pinMode(ledPins[i], OUTPUT);
         digitalWrite(ledPins[i], LOW);
     }
+
+    // Start the music task so initiateKhaby() can actually complete.
+    xTaskCreatePinnedToCore(
+        musicTask,
+        "musicTask",
+        4096,
+        nullptr,
+        1,
+        nullptr,
+        0
+    );
 }
 
 void loop() {
-    unsigned long startMillis = millis();  // Start of sample window
-    unsigned int peakToPeak = 0;   // peak-to-peak level
+    const unsigned long now = millis();
+    const unsigned int micAmplitude = readMicAmplitude();
 
-    unsigned int signalMax = 0;
-    unsigned int signalMin = 4095;
-    //  collect data for 50 mS
-    while (millis() - startMillis < sampleWindow) {
-        sample = analogRead(micPin);
-        if (sample < 4095) {
-            if (sample > signalMax) {
-                signalMax = sample;  // save just the max levels
-            } else if (sample < signalMin) {
-                signalMin = sample;  // save just the min levels
-            }
-        }
+    if (DEBUG) {
+        Serial.println(micAmplitude);
     }
-    peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
-    Serial.println(peakToPeak);
 
-    if (peakToPeak > threshold) {
-        lightLED();
-    }
+    updateLedState(micAmplitude > threshold, now);
 
 }
