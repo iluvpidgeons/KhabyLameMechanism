@@ -4,12 +4,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-bool DEBUG = true;
+bool DEBUG = true; // Activates serial prints
 // Sample window width in ms (50ms = 20Hz) for measuring sound amplitude. Adjust this based on how responsive you want the LEDs to be.
 // Shorter windows will be more responsive but may be more affected by noise, while longer windows will be smoother but less responsive.
 const int sampleWindow = 50;
 const int threshold = 2500; // Amplitude threshold to consider as "loud". Adjust this based on your microphone's sensitivity and environment noise level.
-const unsigned long interval = 750; // How long you need to scream to light up the next led (in ms)
+const unsigned long interval = 100; // How long you need to scream to light up the next led (in ms)
 const int cylonInterval = 100; // Interval for the Cylon LED pattern in ms
 
 // pins
